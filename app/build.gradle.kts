@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.exercist"
+    namespace = "com.bossinc.exercist"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.exercist"
+        applicationId = "com.bossinc.exercist"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
