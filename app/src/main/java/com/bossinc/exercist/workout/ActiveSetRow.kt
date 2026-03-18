@@ -6,19 +6,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 @Composable
 fun ActiveSetRow(
     setNumber: Int,
     initialReps: Int = 0,
-    initialWeight: Double = 0.0,
-    isCompleted: Boolean = false,
-    onComplete: (reps: Int, weight: Double) -> Unit
+    initialWeight: Int = 0,
+    onValuesChange: (reps: Int, weight: Int) -> Unit
 ) {
-    var reps by remember { mutableStateOf(if (initialReps > 0) initialReps.toString() else "") }
-    var weight by remember { mutableStateOf(if (initialWeight > 0) initialWeight.toString() else "") }
+    var reps by remember { mutableStateOf(TextFieldValue(if (initialReps > 0) initialReps.toString() else "")) }
+    var weight by remember { mutableStateOf(TextFieldValue(if (initialWeight > 0) initialWeight.toString() else "")) }
+    val scope = rememberCoroutineScope()
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -28,25 +32,29 @@ fun ActiveSetRow(
         Text("Set $setNumber", modifier = Modifier.width(48.dp))
         OutlinedTextField(
             value = weight,
-            onValueChange = { weight = it },
-            label = { Text("kg") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            modifier = Modifier.weight(1f),
+            onValueChange = {
+                weight = it
+                onValuesChange(reps.text.toIntOrNull() ?: 0, it.text.toIntOrNull() ?: 0)
+            },
+            label = { Text("lbs") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier
+                .weight(1f)
+                .onFocusChanged { if (it.isFocused) scope.launch { weight = weight.copy(selection = TextRange(0, weight.text.length)) } },
             singleLine = true
         )
         OutlinedTextField(
             value = reps,
-            onValueChange = { reps = it },
+            onValueChange = {
+                reps = it
+                onValuesChange(it.text.toIntOrNull() ?: 0, weight.text.toIntOrNull() ?: 0)
+            },
             label = { Text("reps") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .onFocusChanged { if (it.isFocused) scope.launch { reps = reps.copy(selection = TextRange(0, reps.text.length)) } },
             singleLine = true
-        )
-        Checkbox(
-            checked = isCompleted,
-            onCheckedChange = {
-                onComplete(reps.toIntOrNull() ?: 0, weight.toDoubleOrNull() ?: 0.0)
-            }
         )
     }
 }

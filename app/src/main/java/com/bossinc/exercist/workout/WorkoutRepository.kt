@@ -3,6 +3,7 @@ package com.bossinc.exercist.workout
 import com.bossinc.exercist.data.model.WorkoutSession
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,6 +19,18 @@ class WorkoutRepository @Inject constructor(
 
     suspend fun saveWorkoutSession(session: WorkoutSession): Result<Unit> = runCatching {
         sessionsCollection().add(session.copy(userId = userId)).await()
+        Unit
+    }
+
+    suspend fun getRecentSessions(limit: Int = 20): List<WorkoutSession> =
+        sessionsCollection()
+            .orderBy("startedAt", Query.Direction.DESCENDING)
+            .limit(limit.toLong())
+            .get().await()
+            .documents.mapNotNull { it.toObject(WorkoutSession::class.java) }
+
+    suspend fun deleteWorkoutSession(sessionId: String): Result<Unit> = runCatching {
+        sessionsCollection().document(sessionId).delete().await()
         Unit
     }
 }

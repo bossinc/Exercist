@@ -32,6 +32,16 @@ class ExerciseRepository @Inject constructor(
         Unit
     }
 
+    suspend fun updateExercise(exercise: Exercise): Result<Unit> = runCatching {
+        collection.document(exercise.id).set(exercise).await()
+        Unit
+    }
+
+    suspend fun deleteExercise(exerciseId: String): Result<Unit> = runCatching {
+        collection.document(exerciseId).delete().await()
+        Unit
+    }
+
     suspend fun seedSampleExercises() {
         val samples = listOf(
             Exercise(name = "Bench Press", muscleGroup = "Chest", equipment = "Barbell"),

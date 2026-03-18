@@ -9,9 +9,9 @@ data class PersonalRecord(
     val userId: String = "",
     val exerciseId: String = "",
     val exerciseName: String = "",
-    val weight: Double = 0.0,
+    val weight: Int = 0,
     val reps: Int = 0,
-    val unit: String = "kg",
+    val unit: String = "lbs",
     val workoutSessionId: String = "",
     @ServerTimestamp val achievedAt: Date? = null
 )

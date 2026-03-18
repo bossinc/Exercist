@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,13 +19,16 @@ class TemplateRepository @Inject constructor(
     private val userId get() = auth.currentUser?.uid ?: ""
     private fun collection() = firestore.collection("users").document(userId).collection("templates")
 
-    fun getTemplates(): Flow<List<WorkoutTemplate>> = callbackFlow {
-        val listener = collection().addSnapshotListener { snapshot, error ->
-            if (error != null) { close(error); return@addSnapshotListener }
-            val templates = snapshot?.documents?.mapNotNull { it.toObject(WorkoutTemplate::class.java) } ?: emptyList()
-            trySend(templates)
+    fun getTemplates(): Flow<List<WorkoutTemplate>> {
+        if (userId.isEmpty()) return flowOf(emptyList())
+        return callbackFlow {
+            val listener = collection().addSnapshotListener { snapshot, error ->
+                if (error != null) { close(error); return@addSnapshotListener }
+                val templates = snapshot?.documents?.mapNotNull { it.toObject(WorkoutTemplate::class.java) } ?: emptyList()
+                trySend(templates)
+            }
+            awaitClose { listener.remove() }
         }
-        awaitClose { listener.remove() }
     }
 
     suspend fun createTemplate(template: WorkoutTemplate): Result<Unit> = runCatching {

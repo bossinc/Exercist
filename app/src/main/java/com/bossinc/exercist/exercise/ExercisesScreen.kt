@@ -27,11 +27,15 @@ fun ExercisesScreen(
     val selectedGroup by viewModel.selectedMuscleGroup.collectAsState()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Exercises") }) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onCreateExercise) {
-                Icon(Icons.Default.Add, contentDescription = "Add Exercise")
-            }
+        topBar = {
+            TopAppBar(
+                title = { Text("Exercises") },
+                actions = {
+                    IconButton(onClick = onCreateExercise) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Exercise")
+                    }
+                }
+            )
         }
     ) { padding ->
         Column(Modifier.padding(padding)) {

@@ -12,5 +12,7 @@ data class WorkoutSession(
     val durationMinutes: Int = 0,
     val notes: String = "",
     val templateId: String? = null,
-    @ServerTimestamp val date: Date? = null
+    @ServerTimestamp val date: Date? = null,
+    val startedAt: Date? = null,
+    val finishedAt: Date? = null
 )

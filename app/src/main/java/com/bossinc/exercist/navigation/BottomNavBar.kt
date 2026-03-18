@@ -3,9 +3,6 @@ package com.bossinc.exercist.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -23,11 +20,9 @@ data class BottomNavItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem("Home", Icons.Default.Home, Routes.Home.route),
     BottomNavItem("Exercises", Icons.Default.FitnessCenter, Routes.Exercises.route),
     BottomNavItem("Workout", Icons.Default.FitnessCenter, Routes.Workout.route),
-    BottomNavItem("History", Icons.Default.History, Routes.History.route),
-    BottomNavItem("Progress", Icons.Default.TrendingUp, Routes.Progress.route)
+    BottomNavItem("History", Icons.Default.History, Routes.History.route)
 )
 
 @Composable

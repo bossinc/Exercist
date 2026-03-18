@@ -25,7 +25,7 @@ class HistoryViewModel @Inject constructor(
             .addSnapshotListener { snapshot, error ->
                 if (error != null) { close(error); return@addSnapshotListener }
                 val sessions = snapshot?.documents?.mapNotNull { it.toObject(WorkoutSession::class.java) }
-                    ?.sortedByDescending { it.date } ?: emptyList()
+                    ?.sortedByDescending { it.startedAt ?: it.date } ?: emptyList()
                 trySend(sessions)
             }
         awaitClose { listener.remove() }
@@ -34,11 +34,32 @@ class HistoryViewModel @Inject constructor(
     private val _selectedSession = MutableStateFlow<WorkoutSession?>(null)
     val selectedSession: StateFlow<WorkoutSession?> = _selectedSession
 
+    private val _sessionDeleted = MutableStateFlow(false)
+    val sessionDeleted: StateFlow<Boolean> = _sessionDeleted
+
     fun loadSession(id: String) {
         viewModelScope.launch {
             _selectedSession.value = firestore.collection("users").document(userId)
                 .collection("workouts").document(id).get().await()
                 .toObject(WorkoutSession::class.java)
+        }
+    }
+
+    fun updateSession(session: WorkoutSession) {
+        viewModelScope.launch {
+            firestore.collection("users").document(userId)
+                .collection("workouts").document(session.id)
+                .set(session).await()
+            _selectedSession.value = session
+        }
+    }
+
+    fun deleteSession(sessionId: String) {
+        viewModelScope.launch {
+            firestore.collection("users").document(userId)
+                .collection("workouts").document(sessionId)
+                .delete().await()
+            _sessionDeleted.value = true
         }
     }
 }

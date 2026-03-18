@@ -14,8 +14,8 @@ data class User(
 )
 
 data class BodyWeightEntry(
-    val weight: Double = 0.0,
-    val unit: String = "kg",
+    val weight: Int = 0,
+    val unit: String = "lbs",
     val date: Date = Date()
 )
 

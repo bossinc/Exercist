@@ -26,7 +26,7 @@ fun SettingsScreen(
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("App Settings", style = MaterialTheme.typography.titleMedium)
             HorizontalDivider()
-            Text("Weight Unit: kg")
+            Text("Weight Unit: lbs")
             Text("Theme: System Default")
             Spacer(Modifier.height(16.dp))
             OutlinedButton(onClick = viewModel::signOut, modifier = Modifier.fillMaxWidth()) {

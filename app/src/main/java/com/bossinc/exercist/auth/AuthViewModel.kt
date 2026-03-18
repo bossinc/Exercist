@@ -1,5 +1,6 @@
 package com.bossinc.exercist.auth
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,19 +22,14 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
-    fun signIn(email: String, password: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            repository.signIn(email, password)
-                .onSuccess { _uiState.value = AuthUiState(isAuthenticated = true) }
-                .onFailure { e -> _uiState.value = AuthUiState(error = e.message) }
-        }
+    fun skipAuth() {
+        _uiState.value = AuthUiState(isAuthenticated = true)
     }
 
-    fun signUp(email: String, password: String) {
+    fun signInWithGoogle(context: Context, webClientId: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            repository.signUp(email, password)
+            _uiState.value = AuthUiState(isLoading = true)
+            repository.signInWithGoogle(context, webClientId)
                 .onSuccess { _uiState.value = AuthUiState(isAuthenticated = true) }
                 .onFailure { e -> _uiState.value = AuthUiState(error = e.message) }
         }

@@ -38,7 +38,7 @@ fun ProfileScreen(
                 Column(Modifier.padding(16.dp)) {
                     Text("Goals", style = MaterialTheme.typography.titleMedium)
                     Text("Weekly workouts: ${user?.goals?.weeklyWorkouts ?: 3}")
-                    user?.goals?.targetBodyWeight?.let { Text("Target weight: ${it}kg") }
+                    user?.goals?.targetBodyWeight?.let { Text("Target weight: ${it}lbs") }
                 }
             }
 

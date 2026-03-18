@@ -15,19 +15,16 @@ import com.bossinc.exercist.history.HistoryScreen
 import com.bossinc.exercist.history.SessionDetailScreen
 import com.bossinc.exercist.profile.ProfileScreen
 import com.bossinc.exercist.profile.SettingsScreen
-import com.bossinc.exercist.progress.PRsScreen
-import com.bossinc.exercist.progress.ProgressScreen
 import com.bossinc.exercist.template.CreateTemplateScreen
 import com.bossinc.exercist.template.TemplateDetailScreen
 import com.bossinc.exercist.template.TemplatesScreen
 import com.bossinc.exercist.workout.WorkoutLogScreen
 import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.material3.Text
 
 @Composable
 fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     val startDestination = if (FirebaseAuth.getInstance().currentUser != null) {
-        Routes.Home.route
+        Routes.Workout.route
     } else {
         Routes.Auth.route
     }
@@ -36,14 +33,11 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         composable(Routes.Auth.route) {
             AuthScreen(
                 onAuthSuccess = {
-                    navController.navigate(Routes.Home.route) {
+                    navController.navigate(Routes.Workout.route) {
                         popUpTo(Routes.Auth.route) { inclusive = true }
                     }
                 }
             )
-        }
-        composable(Routes.Home.route) {
-            Text("Home — start a workout or pick a template")
         }
         composable(Routes.Exercises.route) {
             ExercisesScreen(
@@ -96,14 +90,23 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         ) { backStackEntry ->
             SessionDetailScreen(
                 sessionId = backStackEntry.arguments?.getString("sessionId") ?: "",
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onContinueWorkout = {
+                    navController.navigate(Routes.Workout.route) {
+                        popUpTo(Routes.Workout.route) { inclusive = true }
+                    }
+                },
+                onCopyWorkout = {
+                    navController.navigate(Routes.Workout.route) {
+                        popUpTo(Routes.Workout.route) { inclusive = true }
+                    }
+                },
+                onNavigateToHistory = {
+                    navController.navigate(Routes.History.route) {
+                        popUpTo(Routes.History.route) { inclusive = true }
+                    }
+                }
             )
-        }
-        composable(Routes.Progress.route) {
-            ProgressScreen()
-        }
-        composable(Routes.PRs.route) {
-            PRsScreen()
         }
         composable(Routes.Profile.route) {
             ProfileScreen(onSettings = { navController.navigate(Routes.Settings.route) })

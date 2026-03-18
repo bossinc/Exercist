@@ -37,7 +37,21 @@ class ExerciseViewModel @Inject constructor(
     fun setSearchQuery(query: String) { _searchQuery.value = query }
     fun setMuscleGroup(group: String?) { _selectedMuscleGroup.value = group }
 
+    private val _exerciseDeleted = MutableStateFlow(false)
+    val exerciseDeleted: StateFlow<Boolean> = _exerciseDeleted
+
     fun createExercise(exercise: Exercise) {
         viewModelScope.launch { repository.createExercise(exercise) }
+    }
+
+    fun updateExercise(exercise: Exercise) {
+        viewModelScope.launch { repository.updateExercise(exercise) }
+    }
+
+    fun deleteExercise(exerciseId: String) {
+        viewModelScope.launch {
+            repository.deleteExercise(exerciseId)
+                .onSuccess { _exerciseDeleted.value = true }
+        }
     }
 }

@@ -1,7 +1,13 @@
 package com.bossinc.exercist.auth
 
+import android.content.Context
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,12 +21,21 @@ class FirebaseAuthRepository @Inject constructor(
 ) {
     val currentUser: FirebaseUser? get() = auth.currentUser
 
-    suspend fun signIn(email: String, password: String): Result<FirebaseUser> = runCatching {
-        auth.signInWithEmailAndPassword(email, password).await().user!!
-    }
+    suspend fun signInWithGoogle(context: Context, webClientId: String): Result<FirebaseUser> = runCatching {
+        val googleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId(webClientId)
+            .build()
 
-    suspend fun signUp(email: String, password: String): Result<FirebaseUser> = runCatching {
-        auth.createUserWithEmailAndPassword(email, password).await().user!!
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
+        val credentialManager = CredentialManager.create(context)
+        val result = credentialManager.getCredential(context, request)
+        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
+        val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+        auth.signInWithCredential(firebaseCredential).await().user!!
     }
 
     fun signOut() = auth.signOut()
