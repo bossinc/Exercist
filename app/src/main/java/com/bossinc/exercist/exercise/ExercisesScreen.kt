@@ -36,7 +36,8 @@ fun ExercisesScreen(
                     }
                 }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         Column(Modifier.padding(padding)) {
             OutlinedTextField(

@@ -21,7 +21,8 @@ fun SettingsScreen(
                 title = { Text("Settings") },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("App Settings", style = MaterialTheme.typography.titleMedium)

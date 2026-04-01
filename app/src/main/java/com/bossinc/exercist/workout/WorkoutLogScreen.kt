@@ -56,7 +56,8 @@ fun WorkoutLogScreen(
                     }
                 }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding),
@@ -147,7 +148,7 @@ fun WorkoutLogScreen(
                                 Text("Last time", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 prevSets.forEach { prev ->
                                     Text(
-                                        "Set ${prev.setNumber}: ${prev.weight}lbs × ${prev.reps} reps",
+                                        "${prev.weight}lbs × ${prev.reps}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

@@ -24,7 +24,7 @@ fun HistoryScreen(
     val exercises by exerciseViewModel.exercises.collectAsState()
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy h:mm a", Locale.getDefault()) }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("History") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text("History") }) }, contentWindowInsets = WindowInsets(0)) { padding ->
         LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(sessions) { session ->
                 Card(modifier = Modifier.fillMaxWidth().clickable { onSessionClick(session.id) }) {

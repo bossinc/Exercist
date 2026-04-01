@@ -27,7 +27,8 @@ fun TemplatesScreen(
             FloatingActionButton(onClick = onCreateTemplate) {
                 Icon(Icons.Default.Add, contentDescription = "Create Template")
             }
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding),

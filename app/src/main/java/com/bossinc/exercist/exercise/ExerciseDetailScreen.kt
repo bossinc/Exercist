@@ -59,7 +59,8 @@ fun ExerciseDetailScreen(
                     }
                 }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         exercise?.let {
             if (isEditing) {

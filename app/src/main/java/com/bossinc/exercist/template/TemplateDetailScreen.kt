@@ -31,7 +31,8 @@ fun TemplateDetailScreen(
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } },
                 actions = { IconButton(onClick = onStartWorkout) { Icon(Icons.Default.PlayArrow, contentDescription = "Start Workout") } }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         template?.let { t ->
             LazyColumn(Modifier.padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

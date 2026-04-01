@@ -29,7 +29,8 @@ fun CreateExerciseScreen(
                 title = { Text("Create Exercise") },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())

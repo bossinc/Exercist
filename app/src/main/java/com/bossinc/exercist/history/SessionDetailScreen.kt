@@ -86,7 +86,8 @@ fun SessionDetailScreen(
                     }
                 }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         session?.let { s ->
             LazyColumn(
@@ -149,7 +150,7 @@ fun SessionDetailScreen(
                                         }
                                     )
                                 } else {
-                                    Text("Set ${set.setNumber}: ${set.weight}lbs × ${set.reps} reps")
+                                    Text("${set.weight}lbs × ${set.reps}")
                                 }
                             }
                             if (isEditing) {

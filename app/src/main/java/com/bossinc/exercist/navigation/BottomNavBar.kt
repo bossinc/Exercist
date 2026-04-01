@@ -1,6 +1,7 @@
 package com.bossinc.exercist.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Icon
@@ -20,7 +21,7 @@ data class BottomNavItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem("Exercises", Icons.Default.FitnessCenter, Routes.Exercises.route),
+    BottomNavItem("Exercises", Icons.Default.Create, Routes.Exercises.route),
     BottomNavItem("Workout", Icons.Default.FitnessCenter, Routes.Workout.route),
     BottomNavItem("History", Icons.Default.History, Routes.History.route)
 )

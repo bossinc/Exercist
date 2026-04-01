@@ -25,7 +25,8 @@ fun CreateTemplateScreen(
                 title = { Text("Create Template") },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Template Name") }, modifier = Modifier.fillMaxWidth())

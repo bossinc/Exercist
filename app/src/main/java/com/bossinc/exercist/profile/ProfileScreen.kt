@@ -24,7 +24,8 @@ fun ProfileScreen(
                 title = { Text("Profile") },
                 actions = { IconButton(onClick = onSettings) { Icon(Icons.Default.Settings, null) } }
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
         Column(
             Modifier.padding(padding).padding(16.dp).fillMaxWidth(),
