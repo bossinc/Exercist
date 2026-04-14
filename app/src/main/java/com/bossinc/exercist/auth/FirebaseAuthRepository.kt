@@ -8,11 +8,6 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import dagger.Binds
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
@@ -55,18 +50,4 @@ class FirebaseAuthRepository @Inject constructor(
     }
 
     override fun signOut() = auth.signOut()
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class AuthModule {
-    @Binds
-    @Singleton
-    abstract fun bindAuthRepository(impl: FirebaseAuthRepository): AuthRepository
-
-    companion object {
-        @Provides
-        @Singleton
-        fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
-    }
 }

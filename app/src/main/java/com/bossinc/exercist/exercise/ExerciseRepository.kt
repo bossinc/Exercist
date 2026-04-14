@@ -3,11 +3,6 @@ package com.bossinc.exercist.exercise
 import com.bossinc.exercist.data.model.Exercise
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.Binds
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -51,19 +46,5 @@ class FirebaseExerciseRepository @Inject constructor(
     override suspend fun deleteExercise(exerciseId: String): Result<Unit> = runCatching {
         collection.document(exerciseId).delete().await()
         Unit
-    }
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class ExerciseModule {
-    @Binds
-    @Singleton
-    abstract fun bindExerciseRepository(impl: FirebaseExerciseRepository): ExerciseRepository
-
-    companion object {
-        @Provides
-        @Singleton
-        fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
     }
 }
