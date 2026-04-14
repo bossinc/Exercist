@@ -13,6 +13,7 @@ navigationCompose = "2.8.3"
 viewModelCompose = "2.8.7"
 vico = "2.0.0-alpha.28"
 coroutines = "1.8.1"
+mockk = "1.13.12"
 lifecycleRuntimeKtx = "2.8.7"
 
 [libraries]
@@ -45,6 +46,9 @@ hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-com
 # Coroutines
 coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
+coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+# MockK
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 # Google Sign-In / Credential Manager
 credentials = { group = "androidx.credentials", name = "credentials", version = "1.3.0" }
 credentials-play-services = { group = "androidx.credentials", name = "credentials-play-services-auth", version = "1.3.0" }

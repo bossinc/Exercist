@@ -1,7 +1,7 @@
 package com.bossinc.exercist.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -20,30 +20,17 @@ import com.bossinc.exercist.template.CreateTemplateScreen
 import com.bossinc.exercist.template.TemplateDetailScreen
 import com.bossinc.exercist.template.TemplatesScreen
 import com.bossinc.exercist.workout.WorkoutLogScreen
-import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
-    val startDestination = if (FirebaseAuth.getInstance().currentUser != null) {
-        Routes.Workout.route
-    } else {
-        Routes.Auth.route
-    }
+fun NavGraph(navController: NavHostController, isAuthenticated: Boolean, modifier: Modifier = Modifier) {
+    val startDestination = if (isAuthenticated) Routes.Workout.route else Routes.Auth.route
 
-    DisposableEffect(navController) {
-        val auth = FirebaseAuth.getInstance()
-        val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-            if (firebaseAuth.currentUser == null) {
-                val currentRoute = navController.currentBackStackEntry?.destination?.route
-                if (currentRoute != Routes.Auth.route) {
-                    navController.navigate(Routes.Auth.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
+    LaunchedEffect(isAuthenticated) {
+        if (!isAuthenticated) {
+            navController.navigate(Routes.Auth.route) {
+                popUpTo(0) { inclusive = true }
             }
         }
-        auth.addAuthStateListener(listener)
-        onDispose { auth.removeAuthStateListener(listener) }
     }
 
     NavHost(navController = navController, startDestination = startDestination, modifier = modifier) {
