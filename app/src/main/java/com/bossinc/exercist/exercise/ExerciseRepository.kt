@@ -41,25 +41,6 @@ class ExerciseRepository @Inject constructor(
         collection.document(exerciseId).delete().await()
         Unit
     }
-
-    suspend fun seedSampleExercises() {
-        val samples = listOf(
-            Exercise(name = "Bench Press", muscleGroup = "Chest", equipment = "Barbell"),
-            Exercise(name = "Squat", muscleGroup = "Legs", equipment = "Barbell"),
-            Exercise(name = "Deadlift", muscleGroup = "Back", equipment = "Barbell"),
-            Exercise(name = "Pull-up", muscleGroup = "Back", equipment = "Bodyweight"),
-            Exercise(name = "Overhead Press", muscleGroup = "Shoulders", equipment = "Barbell"),
-            Exercise(name = "Barbell Row", muscleGroup = "Back", equipment = "Barbell"),
-            Exercise(name = "Dumbbell Curl", muscleGroup = "Arms", equipment = "Dumbbell"),
-            Exercise(name = "Tricep Dip", muscleGroup = "Arms", equipment = "Bodyweight"),
-            Exercise(name = "Plank", muscleGroup = "Core", equipment = "Bodyweight"),
-            Exercise(name = "Running", muscleGroup = "Cardio", equipment = "None")
-        )
-        val existing = collection.get().await()
-        if (existing.isEmpty) {
-            samples.forEach { collection.add(it).await() }
-        }
-    }
 }
 
 @Module

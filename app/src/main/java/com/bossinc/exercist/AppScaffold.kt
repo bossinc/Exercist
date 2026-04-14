@@ -12,11 +12,9 @@ import com.bossinc.exercist.navigation.NavGraph
 import com.bossinc.exercist.navigation.Routes
 
 private val bottomNavRoutes = setOf(
-    Routes.Home.route,
     Routes.Exercises.route,
     Routes.Workout.route,
-    Routes.History.route,
-    Routes.Progress.route
+    Routes.History.route
 )
 
 @Composable

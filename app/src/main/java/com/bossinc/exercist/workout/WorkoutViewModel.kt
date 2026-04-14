@@ -120,15 +120,6 @@ class WorkoutViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(exercises = exercises)
     }
 
-    fun updateSet(exerciseIndex: Int, setIndex: Int, reps: Int, weight: Int) {
-        val exercises = _uiState.value.exercises.toMutableList()
-        val entry = exercises[exerciseIndex]
-        val sets = entry.sets.toMutableList()
-        sets[setIndex] = sets[setIndex].copy(reps = reps, weight = weight, isCompleted = true)
-        exercises[exerciseIndex] = entry.copy(sets = sets)
-        _uiState.value = _uiState.value.copy(exercises = exercises)
-    }
-
     fun finishWorkout() {
         val snapshot = _uiState.value
         val finishedAt = Date()

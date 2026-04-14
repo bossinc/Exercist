@@ -27,9 +27,5 @@ class UserRepository @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-    suspend fun updateUser(user: User): Result<Unit> = runCatching {
-        firestore.collection("users").document(userId).set(user).await()
-    }
-
     fun signOut() = auth.signOut()
 }
