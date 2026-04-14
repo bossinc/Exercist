@@ -1,7 +1,7 @@
 package com.bossinc.exercist.exercise
 
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,13 +10,14 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object ExerciseModule {
-    @Provides
+abstract class ExerciseModule {
+    @Binds
     @Singleton
-    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
+    abstract fun bindExerciseRepository(impl: FirebaseExerciseRepository): ExerciseRepository
 
-    @Provides
-    @Singleton
-    fun provideExerciseRepository(firestore: FirebaseFirestore, auth: FirebaseAuth): ExerciseRepository =
-        ExerciseRepository(firestore, auth)
+    companion object {
+        @Provides
+        @Singleton
+        fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
+    }
 }

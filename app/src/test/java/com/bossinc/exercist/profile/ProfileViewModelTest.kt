@@ -1,5 +1,6 @@
 package com.bossinc.exercist.profile
 
+import com.bossinc.exercist.auth.FirebaseAuthRepository
 import com.bossinc.exercist.data.model.User
 import io.mockk.every
 import io.mockk.mockk
@@ -22,14 +23,16 @@ class ProfileViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var repository: UserRepository
+    private lateinit var authRepository: FirebaseAuthRepository
     private lateinit var viewModel: ProfileViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = mockk(relaxed = true)
+        authRepository = mockk(relaxed = true)
         every { repository.getUser() } returns flowOf(null)
-        viewModel = ProfileViewModel(repository)
+        viewModel = ProfileViewModel(repository, authRepository)
     }
 
     @After
@@ -49,7 +52,7 @@ class ProfileViewModelTest {
     fun `user reflects value emitted by repository`() = runTest {
         val user = User(id = "u1", email = "user@example.com", displayName = "Alice")
         every { repository.getUser() } returns flowOf(user)
-        val vm = ProfileViewModel(repository)
+        val vm = ProfileViewModel(repository, authRepository)
 
         backgroundScope.launch(testDispatcher) { vm.user.collect {} }
 
@@ -60,7 +63,7 @@ class ProfileViewModelTest {
     fun `user exposes display name from repository`() = runTest {
         val user = User(id = "u1", displayName = "Bob")
         every { repository.getUser() } returns flowOf(user)
-        val vm = ProfileViewModel(repository)
+        val vm = ProfileViewModel(repository, authRepository)
 
         backgroundScope.launch(testDispatcher) { vm.user.collect {} }
 
@@ -72,9 +75,9 @@ class ProfileViewModelTest {
     // region signOut
 
     @Test
-    fun `signOut delegates to repository`() {
+    fun `signOut delegates to authRepository`() {
         viewModel.signOut()
-        verify { repository.signOut() }
+        verify { authRepository.signOut() }
     }
 
     // endregion

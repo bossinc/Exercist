@@ -1,6 +1,7 @@
 package com.bossinc.exercist.auth
 
 import com.google.firebase.auth.FirebaseAuth
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -9,13 +10,14 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AuthModule {
-    @Provides
+abstract class AuthModule {
+    @Binds
     @Singleton
-    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+    abstract fun bindAuthRepository(impl: FirebaseAuthRepository): AuthRepository
 
-    @Provides
-    @Singleton
-    fun provideAuthRepository(auth: FirebaseAuth): FirebaseAuthRepository =
-        FirebaseAuthRepository(auth)
+    companion object {
+        @Provides
+        @Singleton
+        fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+    }
 }
