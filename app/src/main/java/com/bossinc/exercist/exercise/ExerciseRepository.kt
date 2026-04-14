@@ -3,16 +3,11 @@ package com.bossinc.exercist.exercise
 import com.bossinc.exercist.data.model.Exercise
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
-import javax.inject.Singleton
 
 class ExerciseRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
@@ -43,17 +38,4 @@ class ExerciseRepository @Inject constructor(
         collection.document(exerciseId).delete().await()
         Unit
     }
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-object ExerciseModule {
-    @Provides
-    @Singleton
-    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideExerciseRepository(firestore: FirebaseFirestore, auth: FirebaseAuth): ExerciseRepository =
-        ExerciseRepository(firestore, auth)
 }
