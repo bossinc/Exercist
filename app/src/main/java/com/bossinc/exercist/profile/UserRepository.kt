@@ -16,7 +16,6 @@ import javax.inject.Singleton
 
 interface UserRepository {
     fun getUser(): Flow<User?>
-    fun signOut()
 }
 
 @Singleton
@@ -35,8 +34,6 @@ class FirebaseUserRepository @Inject constructor(
             }
         awaitClose { listener.remove() }
     }
-
-    override fun signOut() = auth.signOut()
 }
 
 @Module
