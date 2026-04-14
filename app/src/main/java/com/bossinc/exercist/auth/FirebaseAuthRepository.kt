@@ -8,6 +8,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,16 +18,24 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+interface AuthRepository {
+    val currentUser: FirebaseUser?
+    suspend fun signInAnonymously(): Result<FirebaseUser>
+    suspend fun signInWithGoogle(context: Context, webClientId: String): Result<FirebaseUser>
+    fun signOut()
+}
+
+@Singleton
 class FirebaseAuthRepository @Inject constructor(
     private val auth: FirebaseAuth
-) {
-    val currentUser: FirebaseUser? get() = auth.currentUser
+) : AuthRepository {
+    override val currentUser: FirebaseUser? get() = auth.currentUser
 
-    suspend fun signInAnonymously(): Result<FirebaseUser> = runCatching {
+    override suspend fun signInAnonymously(): Result<FirebaseUser> = runCatching {
         auth.signInAnonymously().await().user!!
     }
 
-    suspend fun signInWithGoogle(context: Context, webClientId: String): Result<FirebaseUser> = runCatching {
+    override suspend fun signInWithGoogle(context: Context, webClientId: String): Result<FirebaseUser> = runCatching {
         val nonce = UUID.randomUUID().toString()
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
@@ -45,18 +54,19 @@ class FirebaseAuthRepository @Inject constructor(
         auth.signInWithCredential(firebaseCredential).await().user!!
     }
 
-    fun signOut() = auth.signOut()
+    override fun signOut() = auth.signOut()
 }
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AuthModule {
-    @Provides
+abstract class AuthModule {
+    @Binds
     @Singleton
-    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+    abstract fun bindAuthRepository(impl: FirebaseAuthRepository): AuthRepository
 
-    @Provides
-    @Singleton
-    fun provideAuthRepository(auth: FirebaseAuth): FirebaseAuthRepository =
-        FirebaseAuthRepository(auth)
+    companion object {
+        @Provides
+        @Singleton
+        fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+    }
 }
