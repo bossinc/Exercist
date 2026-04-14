@@ -1,6 +1,7 @@
 package com.bossinc.exercist.exercise
 
 import com.bossinc.exercist.data.model.Exercise
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
@@ -14,7 +15,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 class ExerciseRepository @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val auth: FirebaseAuth
 ) {
     private val collection = firestore.collection("exercises")
 
@@ -28,7 +30,7 @@ class ExerciseRepository @Inject constructor(
     }
 
     suspend fun createExercise(exercise: Exercise): Result<Unit> = runCatching {
-        collection.add(exercise).await()
+        collection.add(exercise.copy(createdBy = auth.currentUser?.uid ?: "")).await()
         Unit
     }
 
@@ -52,6 +54,6 @@ object ExerciseModule {
 
     @Provides
     @Singleton
-    fun provideExerciseRepository(firestore: FirebaseFirestore): ExerciseRepository =
-        ExerciseRepository(firestore)
+    fun provideExerciseRepository(firestore: FirebaseFirestore, auth: FirebaseAuth): ExerciseRepository =
+        ExerciseRepository(firestore, auth)
 }

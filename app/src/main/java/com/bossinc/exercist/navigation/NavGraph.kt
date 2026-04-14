@@ -1,6 +1,7 @@
 package com.bossinc.exercist.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -27,6 +28,22 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         Routes.Workout.route
     } else {
         Routes.Auth.route
+    }
+
+    DisposableEffect(navController) {
+        val auth = FirebaseAuth.getInstance()
+        val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            if (firebaseAuth.currentUser == null) {
+                val currentRoute = navController.currentBackStackEntry?.destination?.route
+                if (currentRoute != Routes.Auth.route) {
+                    navController.navigate(Routes.Auth.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
+        }
+        auth.addAuthStateListener(listener)
+        onDispose { auth.removeAuthStateListener(listener) }
     }
 
     NavHost(navController = navController, startDestination = startDestination, modifier = modifier) {

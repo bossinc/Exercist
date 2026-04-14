@@ -13,6 +13,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,10 +22,16 @@ class FirebaseAuthRepository @Inject constructor(
 ) {
     val currentUser: FirebaseUser? get() = auth.currentUser
 
+    suspend fun signInAnonymously(): Result<FirebaseUser> = runCatching {
+        auth.signInAnonymously().await().user!!
+    }
+
     suspend fun signInWithGoogle(context: Context, webClientId: String): Result<FirebaseUser> = runCatching {
+        val nonce = UUID.randomUUID().toString()
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
             .setServerClientId(webClientId)
+            .setNonce(nonce)
             .build()
 
         val request = GetCredentialRequest.Builder()

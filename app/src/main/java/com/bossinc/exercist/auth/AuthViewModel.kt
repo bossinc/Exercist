@@ -23,7 +23,12 @@ class AuthViewModel @Inject constructor(
     val uiState: StateFlow<AuthUiState> = _uiState
 
     fun skipAuth() {
-        _uiState.value = AuthUiState(isAuthenticated = true)
+        viewModelScope.launch {
+            _uiState.value = AuthUiState(isLoading = true)
+            repository.signInAnonymously()
+                .onSuccess { _uiState.value = AuthUiState(isAuthenticated = true) }
+                .onFailure { e -> _uiState.value = AuthUiState(error = e.message) }
+        }
     }
 
     fun signInWithGoogle(context: Context, webClientId: String) {
