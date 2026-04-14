@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bossinc.exercist.data.model.ExerciseEntry
 import com.bossinc.exercist.data.model.ExerciseSet
-import com.bossinc.exercist.exercise.ExerciseViewModel
 import com.bossinc.exercist.workout.WorkoutViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -37,12 +36,11 @@ fun SessionDetailScreen(
     onContinueWorkout: () -> Unit,
     onCopyWorkout: () -> Unit,
     onNavigateToHistory: () -> Unit,
-    viewModel: HistoryViewModel = hiltViewModel(),
-    workoutViewModel: WorkoutViewModel = hiltViewModel(LocalContext.current as ComponentActivity),
-    exerciseViewModel: ExerciseViewModel = hiltViewModel()
+    viewModel: SessionDetailViewModel = hiltViewModel(),
+    workoutViewModel: WorkoutViewModel = hiltViewModel(LocalContext.current as ComponentActivity)
 ) {
     val session by viewModel.selectedSession.collectAsState()
-    val allExercises by exerciseViewModel.exercises.collectAsState()
+    val allExercises by viewModel.exercises.collectAsState()
     val sessionDeleted by viewModel.sessionDeleted.collectAsState()
     val dateFormat = remember { SimpleDateFormat("MMMM dd, yyyy HH:mm", Locale.getDefault()) }
     var isEditing by remember { mutableStateOf(false) }
