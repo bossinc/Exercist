@@ -26,6 +26,4 @@ class UserRepository @Inject constructor(
             }
         awaitClose { listener.remove() }
     }
-
-    fun signOut() = auth.signOut()
 }
