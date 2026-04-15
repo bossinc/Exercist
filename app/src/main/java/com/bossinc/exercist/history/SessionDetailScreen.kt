@@ -1,24 +1,31 @@
 package com.bossinc.exercist.history
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,6 +34,9 @@ import com.bossinc.exercist.data.model.ExerciseSet
 import com.bossinc.exercist.workout.WorkoutViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.roundToInt
+
+private data class DragInfo(val exerciseIndex: Int, val deltaY: Float)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +57,8 @@ fun SessionDetailScreen(
     var editableExercises by remember { mutableStateOf<List<ExerciseEntry>>(emptyList()) }
     var showResumeConfirm by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var dragState by remember { mutableStateOf<DragInfo?>(null) }
+    val spacingPx = with(LocalDensity.current) { 12.dp.toPx() }
 
     LaunchedEffect(sessionId) { viewModel.loadSession(sessionId) }
 
@@ -74,6 +86,7 @@ fun SessionDetailScreen(
                         IconButton(onClick = {
                             session?.let { viewModel.updateSession(it.copy(exercises = editableExercises)) }
                             isEditing = false
+                            dragState = null
                         }) {
                             Icon(Icons.Default.Check, contentDescription = "Save")
                         }
@@ -114,15 +127,72 @@ fun SessionDetailScreen(
                     }
                     Text("Duration: ${s.durationMinutes} minutes")
                 }
-                itemsIndexed(editableExercises) { exerciseIndex, entry ->
+                itemsIndexed(
+                    items = editableExercises,
+                    key = { _, entry -> entry.exerciseId }
+                ) { exerciseIndex, entry ->
                     val displayName = allExercises.find { it.id == entry.exerciseId }?.name ?: entry.exerciseName
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    val isDragging = isEditing && dragState?.exerciseIndex == exerciseIndex
+                    var cardHeightPx by remember { mutableIntStateOf(0) }
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(if (isDragging) {
+                                Modifier
+                                    .zIndex(1f)
+                                    .offset { IntOffset(0, dragState!!.deltaY.roundToInt()) }
+                            } else Modifier)
+                            .onSizeChanged { cardHeightPx = it.height }
+                    ) {
                         Column(Modifier.padding(12.dp)) {
-                            Text(displayName, style = MaterialTheme.typography.titleSmall)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    displayName,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (isEditing) {
+                                    SessionDragHandle(
+                                        onDragStart = {
+                                            dragState = DragInfo(exerciseIndex = exerciseIndex, deltaY = 0f)
+                                        },
+                                        onDragDelta = { delta ->
+                                            dragState?.let { current ->
+                                                val newDelta = current.deltaY + delta
+                                                val stepSize = (cardHeightPx + spacingPx).coerceAtLeast(80f)
+                                                val curIdx = current.exerciseIndex
+                                                val size = editableExercises.size
+                                                when {
+                                                    newDelta > stepSize / 2 && curIdx < size - 1 -> {
+                                                        editableExercises = editableExercises.toMutableList().also { list ->
+                                                            val item = list.removeAt(curIdx)
+                                                            list.add(curIdx + 1, item)
+                                                        }
+                                                        dragState = current.copy(exerciseIndex = curIdx + 1, deltaY = newDelta - stepSize)
+                                                    }
+                                                    newDelta < -(stepSize / 2) && curIdx > 0 -> {
+                                                        editableExercises = editableExercises.toMutableList().also { list ->
+                                                            val item = list.removeAt(curIdx)
+                                                            list.add(curIdx - 1, item)
+                                                        }
+                                                        dragState = current.copy(exerciseIndex = curIdx - 1, deltaY = newDelta + stepSize)
+                                                    }
+                                                    else -> dragState = current.copy(deltaY = newDelta)
+                                                }
+                                            }
+                                        },
+                                        onDragEnd = { dragState = null }
+                                    )
+                                }
+                            }
                             Spacer(Modifier.height(4.dp))
                             entry.sets.forEachIndexed { setIndex, set ->
                                 if (isEditing) {
                                     EditableSetRow(
+                                        exerciseId = entry.exerciseId,
                                         set = set,
                                         onWeightChange = { newWeight ->
                                             editableExercises = editableExercises.toMutableList()
@@ -262,13 +332,43 @@ fun SessionDetailScreen(
 }
 
 @Composable
+private fun SessionDragHandle(
+    onDragStart: () -> Unit,
+    onDragDelta: (Float) -> Unit,
+    onDragEnd: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val latestOnDragStart by rememberUpdatedState(onDragStart)
+    val latestOnDragDelta by rememberUpdatedState(onDragDelta)
+    val latestOnDragEnd by rememberUpdatedState(onDragEnd)
+
+    Icon(
+        imageVector = Icons.Default.DragHandle,
+        contentDescription = "Drag to reorder",
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.pointerInput(Unit) {
+            detectDragGestures(
+                onDragStart = { latestOnDragStart() },
+                onDrag = { change, dragAmount ->
+                    change.consume()
+                    latestOnDragDelta(dragAmount.y)
+                },
+                onDragEnd = { latestOnDragEnd() },
+                onDragCancel = { latestOnDragEnd() }
+            )
+        }
+    )
+}
+
+@Composable
 private fun EditableSetRow(
+    exerciseId: String,
     set: ExerciseSet,
     onWeightChange: (Int) -> Unit,
     onRepsChange: (Int) -> Unit
 ) {
-    var weight by remember(set.setNumber) { mutableStateOf(TextFieldValue(if (set.weight > 0) set.weight.toString() else "")) }
-    var reps by remember(set.setNumber) { mutableStateOf(TextFieldValue(if (set.reps > 0) set.reps.toString() else "")) }
+    var weight by remember(exerciseId, set.setNumber) { mutableStateOf(TextFieldValue(if (set.weight > 0) set.weight.toString() else "")) }
+    var reps by remember(exerciseId, set.setNumber) { mutableStateOf(TextFieldValue(if (set.reps > 0) set.reps.toString() else "")) }
     val scope = rememberCoroutineScope()
 
     Row(

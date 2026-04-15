@@ -77,6 +77,14 @@ class WorkoutViewModel @Inject constructor(
         viewModelScope.launch { repository.deleteWorkoutSession(session.id) }
     }
 
+    fun moveExercise(fromIndex: Int, toIndex: Int) {
+        val exercises = _uiState.value.exercises.toMutableList()
+        if (toIndex < 0 || toIndex >= exercises.size) return
+        val item = exercises.removeAt(fromIndex)
+        exercises.add(toIndex, item)
+        _uiState.value = _uiState.value.copy(exercises = exercises)
+    }
+
     fun removeExercise(exerciseIndex: Int) {
         val exercises = _uiState.value.exercises.toMutableList()
         exercises.removeAt(exerciseIndex)

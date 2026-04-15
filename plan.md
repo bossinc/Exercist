@@ -70,6 +70,31 @@ A mobile app for logging weight training workouts, tracking progress over time, 
 
 ---
 
+## UI Theme Estimates — Duolingo-style Redesign
+
+### Easy wins (~2–4 hours)
+- **Color palette** — swap `Color.kt` + `Theme.kt` to pastel greens, yellows, blues, warm whites
+- **Rounded shapes** — add `Shape.kt` to `ui/theme/`, wire into `MaterialTheme`
+- **Typography** — swap in a rounded font (e.g. Nunito or Poppins via downloadable fonts API)
+
+### Medium effort (~1–2 days)
+- **Button/card styles** — custom `Button` composables with chunky 3D press effect (thick bottom border + shadow); need to audit and replace all usages across 12+ screens
+- **Navigation transitions** — slide/fade transitions in `NavGraph.kt` via `enterTransition`/`exitTransition`
+
+### Higher effort (~2–4 days)
+- **Animations** — app currently has zero; Duolingo relies on press feedback (scale + shadow), screen entry animations (staggered lists, slide-in), and success/completion moments (bouncing checkmarks, XP pop-ups)
+- **Custom components** — progress bars, streak indicators, reward cards
+
+### Summary
+
+| Scope | Effort |
+|---|---|
+| Colors + fonts + shapes only | ~half a day |
+| + Basic animations (transitions, press feedback) | ~2–3 days |
+| Full Duolingo-like experience (custom components, celebrations) | ~1 week |
+
+---
+
 ## Milestones
 
 1. Project setup, Firebase config, basic navigation, auth flow

@@ -15,13 +15,14 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ActiveSetRow(
+    exerciseId: String,
     setNumber: Int,
     initialReps: Int = 0,
     initialWeight: Int = 0,
     onValuesChange: (reps: Int, weight: Int) -> Unit
 ) {
-    var reps by remember { mutableStateOf(TextFieldValue(if (initialReps > 0) initialReps.toString() else "")) }
-    var weight by remember { mutableStateOf(TextFieldValue(if (initialWeight > 0) initialWeight.toString() else "")) }
+    var reps by remember(exerciseId, setNumber) { mutableStateOf(TextFieldValue(if (initialReps > 0) initialReps.toString() else "")) }
+    var weight by remember(exerciseId, setNumber) { mutableStateOf(TextFieldValue(if (initialWeight > 0) initialWeight.toString() else "")) }
     val scope = rememberCoroutineScope()
 
     Row(

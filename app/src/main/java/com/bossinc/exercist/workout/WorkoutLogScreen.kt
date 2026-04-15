@@ -2,14 +2,19 @@ package com.bossinc.exercist.workout
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Search
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.*
@@ -18,18 +23,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.bossinc.exercist.data.model.Exercise
 import com.bossinc.exercist.data.model.MuscleGroups
 import com.bossinc.exercist.exercise.ExerciseViewModel
 import com.bossinc.exercist.navigation.Routes
+
+private data class DragInfo(val exerciseIndex: Int, val deltaY: Float)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +52,8 @@ fun WorkoutLogScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     var showExercisePicker by remember { mutableStateOf(false) }
+    var dragState by remember { mutableStateOf<DragInfo?>(null) }
+    val spacingPx = with(LocalDensity.current) { 16.dp.toPx() }
 
     Scaffold(
         topBar = {
@@ -75,23 +86,78 @@ fun WorkoutLogScreen(
                         )
                     }
                 }
-                itemsIndexed(uiState.exercises) { index, entry ->
+                itemsIndexed(
+                    items = uiState.exercises,
+                    key = { _, entry -> entry.exerciseId }
+                ) { index, entry ->
                     val exercise = exercises.find { it.id == entry.exerciseId }
                     val displayName = exercise?.name ?: entry.exerciseName
-                    ExerciseSwipeToDismiss(onDismiss = { viewModel.removeExercise(index) }) {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp)) {
-                                Text(displayName, style = MaterialTheme.typography.titleMedium)
-                                val subtitle = listOfNotNull(
-                                    exercise?.muscleGroup?.takeIf { it.isNotBlank() },
-                                    exercise?.equipment?.takeIf { it.isNotBlank() }
-                                ).joinToString(" · ")
-                                if (subtitle.isNotBlank()) {
-                                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val isDragging = dragState?.exerciseIndex == index
+                    var cardHeightPx by remember { mutableIntStateOf(0) }
+                    ExerciseSwipeToDismiss(
+                        modifier = if (isDragging) {
+                            Modifier
+                                .zIndex(1f)
+                                .offset { IntOffset(0, dragState!!.deltaY.roundToInt()) }
+                        } else {
+                            Modifier.animateItem(
+                                fadeInSpec = null,
+                                placementSpec = spring(
+                                    stiffness = Spring.StiffnessMedium,
+                                    dampingRatio = Spring.DampingRatioNoBouncy
+                                ),
+                                fadeOutSpec = tween(durationMillis = 200)
+                            )
+                        },
+                        onDismiss = { viewModel.removeExercise(index) }
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onSizeChanged { cardHeightPx = it.height }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(displayName, style = MaterialTheme.typography.titleMedium)
+                                    val subtitle = listOfNotNull(
+                                        exercise?.muscleGroup?.takeIf { it.isNotBlank() },
+                                        exercise?.equipment?.takeIf { it.isNotBlank() }
+                                    ).joinToString(" · ")
+                                    if (subtitle.isNotBlank()) {
+                                        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    if (!exercise?.description.isNullOrBlank()) {
+                                        Text(exercise!!.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
                                 }
-                                if (!exercise?.description.isNullOrBlank()) {
-                                    Text(exercise!!.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
+                                ExerciseDragHandle(
+                                    onDragStart = {
+                                        dragState = DragInfo(exerciseIndex = index, deltaY = 0f)
+                                    },
+                                    onDragDelta = { delta ->
+                                        dragState?.let { current ->
+                                            val newDelta = current.deltaY + delta
+                                            val stepSize = (cardHeightPx + spacingPx).coerceAtLeast(80f)
+                                            val curIdx = current.exerciseIndex
+                                            val size = uiState.exercises.size
+                                            when {
+                                                newDelta > stepSize / 2 && curIdx < size - 1 -> {
+                                                    viewModel.moveExercise(curIdx, curIdx + 1)
+                                                    dragState = current.copy(exerciseIndex = curIdx + 1, deltaY = newDelta - stepSize)
+                                                }
+                                                newDelta < -(stepSize / 2) && curIdx > 0 -> {
+                                                    viewModel.moveExercise(curIdx, curIdx - 1)
+                                                    dragState = current.copy(exerciseIndex = curIdx - 1, deltaY = newDelta + stepSize)
+                                                }
+                                                else -> dragState = current.copy(deltaY = newDelta)
+                                            }
+                                        }
+                                    },
+                                    onDragEnd = { dragState = null }
+                                )
                             }
                         }
                     }
@@ -107,20 +173,77 @@ fun WorkoutLogScreen(
                 }
             } else {
                 // Active phase: show set inputs
-                itemsIndexed(uiState.exercises) { exerciseIndex, entry ->
+                itemsIndexed(
+                    items = uiState.exercises,
+                    key = { _, entry -> entry.exerciseId }
+                ) { exerciseIndex, entry ->
                     val exercise = exercises.find { it.id == entry.exerciseId }
                     val displayName = exercise?.name ?: entry.exerciseName
                     var showInfoDialog by remember { mutableStateOf(false) }
-                    ExerciseSwipeToDismiss(onDismiss = { viewModel.removeExercise(exerciseIndex) }) {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(
-                                displayName,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.clickable(
-                                    enabled = exercise != null && (!exercise.equipment.isNullOrBlank() || !exercise.description.isNullOrBlank())
-                                ) { showInfoDialog = true }
+                    val isDragging = dragState?.exerciseIndex == exerciseIndex
+                    var cardHeightPx by remember { mutableIntStateOf(0) }
+                    ExerciseSwipeToDismiss(
+                        modifier = if (isDragging) {
+                            Modifier
+                                .zIndex(1f)
+                                .offset { IntOffset(0, dragState!!.deltaY.roundToInt()) }
+                        } else {
+                            Modifier.animateItem(
+                                fadeInSpec = null,
+                                placementSpec = spring(
+                                    stiffness = Spring.StiffnessMedium,
+                                    dampingRatio = Spring.DampingRatioNoBouncy
+                                ),
+                                fadeOutSpec = tween(durationMillis = 200)
                             )
+                        },
+                        onDismiss = { viewModel.removeExercise(exerciseIndex) }
+                    ) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onSizeChanged { cardHeightPx = it.height }
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    displayName,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable(
+                                            enabled = exercise != null && (!exercise.equipment.isNullOrBlank() || !exercise.description.isNullOrBlank())
+                                        ) { showInfoDialog = true }
+                                )
+                                ExerciseDragHandle(
+                                    onDragStart = {
+                                        dragState = DragInfo(exerciseIndex = exerciseIndex, deltaY = 0f)
+                                    },
+                                    onDragDelta = { delta ->
+                                        dragState?.let { current ->
+                                            val newDelta = current.deltaY + delta
+                                            val stepSize = (cardHeightPx + spacingPx).coerceAtLeast(80f)
+                                            val curIdx = current.exerciseIndex
+                                            val size = uiState.exercises.size
+                                            when {
+                                                newDelta > stepSize / 2 && curIdx < size - 1 -> {
+                                                    viewModel.moveExercise(curIdx, curIdx + 1)
+                                                    dragState = current.copy(exerciseIndex = curIdx + 1, deltaY = newDelta - stepSize)
+                                                }
+                                                newDelta < -(stepSize / 2) && curIdx > 0 -> {
+                                                    viewModel.moveExercise(curIdx, curIdx - 1)
+                                                    dragState = current.copy(exerciseIndex = curIdx - 1, deltaY = newDelta + stepSize)
+                                                }
+                                                else -> dragState = current.copy(deltaY = newDelta)
+                                            }
+                                        }
+                                    },
+                                    onDragEnd = { dragState = null }
+                                )
+                            }
                             if (showInfoDialog && exercise != null) {
                                 AlertDialog(
                                     onDismissRequest = { showInfoDialog = false },
@@ -166,6 +289,7 @@ fun WorkoutLogScreen(
                             }
                             entry.sets.forEachIndexed { setIndex, set ->
                                 ActiveSetRow(
+                                    exerciseId = entry.exerciseId,
                                     setNumber = set.setNumber,
                                     initialReps = set.reps,
                                     initialWeight = set.weight,
@@ -228,7 +352,37 @@ fun WorkoutLogScreen(
 }
 
 @Composable
+private fun ExerciseDragHandle(
+    onDragStart: () -> Unit,
+    onDragDelta: (Float) -> Unit,
+    onDragEnd: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val latestOnDragStart by rememberUpdatedState(onDragStart)
+    val latestOnDragDelta by rememberUpdatedState(onDragDelta)
+    val latestOnDragEnd by rememberUpdatedState(onDragEnd)
+
+    Icon(
+        imageVector = Icons.Default.DragHandle,
+        contentDescription = "Drag to reorder",
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.pointerInput(Unit) {
+            detectDragGestures(
+                onDragStart = { latestOnDragStart() },
+                onDrag = { change, dragAmount ->
+                    change.consume()
+                    latestOnDragDelta(dragAmount.y)
+                },
+                onDragEnd = { latestOnDragEnd() },
+                onDragCancel = { latestOnDragEnd() }
+            )
+        }
+    )
+}
+
+@Composable
 private fun ExerciseSwipeToDismiss(
+    modifier: Modifier = Modifier,
     onDismiss: () -> Unit,
     content: @Composable () -> Unit
 ) {
@@ -236,7 +390,7 @@ private fun ExerciseSwipeToDismiss(
     var isLongPressed by remember { mutableStateOf(false) }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
