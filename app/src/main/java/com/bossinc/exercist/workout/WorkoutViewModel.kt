@@ -31,13 +31,11 @@ class WorkoutViewModel @Inject constructor(
     val uiState: StateFlow<WorkoutUiState> = _uiState
     private var startedAt: Date? = null
 
-    fun addExercise(exerciseId: String, exerciseName: String, muscleGroup: String) {
+    fun addExercise(exerciseId: String) {
         _uiState.value = _uiState.value.copy(
             exercises = _uiState.value.exercises + ExerciseEntry(
                 exerciseId = exerciseId,
-                exerciseName = exerciseName,
-                muscleGroup = muscleGroup,
-                sets = listOf(ExerciseSet(setNumber = 1))
+                sets = listOf(ExerciseSet())
             )
         )
     }
@@ -64,12 +62,12 @@ class WorkoutViewModel @Inject constructor(
     fun copyWorkout(session: com.bossinc.exercist.data.model.WorkoutSession) {
         _uiState.value = WorkoutUiState(
             phase = WorkoutPhase.PLANNING,
-            exercises = session.exercises.map { it.copy(sets = listOf(ExerciseSet(setNumber = 1))) }
+            exercises = session.exercises.map { it.copy(sets = listOf(ExerciseSet())) }
         )
     }
 
     fun resumeWorkout(session: com.bossinc.exercist.data.model.WorkoutSession) {
-        startedAt = session.startedAt ?: session.date ?: Date()
+        startedAt = session.startedAt ?: Date()
         _uiState.value = WorkoutUiState(
             phase = WorkoutPhase.ACTIVE,
             exercises = session.exercises
@@ -105,7 +103,6 @@ class WorkoutViewModel @Inject constructor(
         val last = entry.sets.lastOrNull()
         exercises[exerciseIndex] = entry.copy(
             sets = entry.sets + ExerciseSet(
-                setNumber = entry.sets.size + 1,
                 reps = last?.reps ?: 0,
                 weight = last?.weight ?: 0
             )
@@ -132,12 +129,10 @@ class WorkoutViewModel @Inject constructor(
         val snapshot = _uiState.value
         val finishedAt = Date()
         val start = startedAt ?: finishedAt
-        val durationMinutes = ((finishedAt.time - start.time) / 60000).toInt()
         _uiState.value = WorkoutUiState()
         viewModelScope.launch {
             val session = WorkoutSession(
                 exercises = snapshot.exercises,
-                durationMinutes = durationMinutes,
                 startedAt = start,
                 finishedAt = finishedAt
             )

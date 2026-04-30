@@ -14,8 +14,6 @@ import com.bossinc.exercist.exercise.ExerciseDetailScreen
 import com.bossinc.exercist.exercise.ExercisesScreen
 import com.bossinc.exercist.history.HistoryScreen
 import com.bossinc.exercist.history.SessionDetailScreen
-import com.bossinc.exercist.profile.ProfileScreen
-import com.bossinc.exercist.profile.SettingsScreen
 import com.bossinc.exercist.template.CreateTemplateScreen
 import com.bossinc.exercist.template.TemplateDetailScreen
 import com.bossinc.exercist.template.TemplatesScreen
@@ -111,12 +109,6 @@ fun NavGraph(navController: NavHostController, isAuthenticated: Boolean, modifie
                     }
                 }
             )
-        }
-        composable(Routes.Profile.route) {
-            ProfileScreen(onSettings = { navController.navigate(Routes.Settings.route) })
-        }
-        composable(Routes.Settings.route) {
-            SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

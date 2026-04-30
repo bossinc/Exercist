@@ -16,13 +16,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun ActiveSetRow(
     exerciseId: String,
-    setNumber: Int,
+    setIndex: Int,
     initialReps: Int = 0,
     initialWeight: Int = 0,
     onValuesChange: (reps: Int, weight: Int) -> Unit
 ) {
-    var reps by remember(exerciseId, setNumber) { mutableStateOf(TextFieldValue(if (initialReps > 0) initialReps.toString() else "")) }
-    var weight by remember(exerciseId, setNumber) { mutableStateOf(TextFieldValue(if (initialWeight > 0) initialWeight.toString() else "")) }
+    var reps by remember(exerciseId, setIndex) { mutableStateOf(TextFieldValue(if (initialReps > 0) initialReps.toString() else "")) }
+    var weight by remember(exerciseId, setIndex) { mutableStateOf(TextFieldValue(if (initialWeight > 0) initialWeight.toString() else "")) }
     val scope = rememberCoroutineScope()
 
     Row(
@@ -30,7 +30,7 @@ fun ActiveSetRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text("Set $setNumber", modifier = Modifier.width(48.dp))
+        Text("Set ${setIndex + 1}", modifier = Modifier.width(48.dp))
         OutlinedTextField(
             value = weight,
             onValueChange = {

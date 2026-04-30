@@ -91,7 +91,7 @@ fun WorkoutLogScreen(
                     key = { _, entry -> entry.exerciseId }
                 ) { index, entry ->
                     val exercise = exercises.find { it.id == entry.exerciseId }
-                    val displayName = exercise?.name ?: entry.exerciseName
+                    val displayName = exercise?.name ?: ""
                     val isDragging = dragState?.exerciseIndex == index
                     var cardHeightPx by remember { mutableIntStateOf(0) }
                     ExerciseSwipeToDismiss(
@@ -178,7 +178,7 @@ fun WorkoutLogScreen(
                     key = { _, entry -> entry.exerciseId }
                 ) { exerciseIndex, entry ->
                     val exercise = exercises.find { it.id == entry.exerciseId }
-                    val displayName = exercise?.name ?: entry.exerciseName
+                    val displayName = exercise?.name ?: ""
                     var showInfoDialog by remember { mutableStateOf(false) }
                     val isDragging = dragState?.exerciseIndex == exerciseIndex
                     var cardHeightPx by remember { mutableIntStateOf(0) }
@@ -290,7 +290,7 @@ fun WorkoutLogScreen(
                             entry.sets.forEachIndexed { setIndex, set ->
                                 ActiveSetRow(
                                     exerciseId = entry.exerciseId,
-                                    setNumber = set.setNumber,
+                                    setIndex = setIndex,
                                     initialReps = set.reps,
                                     initialWeight = set.weight,
                                     onValuesChange = { reps, weight ->
@@ -341,8 +341,8 @@ fun WorkoutLogScreen(
 
     if (showExercisePicker) {
         ExercisePickerSheet(
-            onExerciseSelected = { id, name, muscleGroup ->
-                viewModel.addExercise(id, name, muscleGroup)
+            onExerciseSelected = { id ->
+                viewModel.addExercise(id)
                 showExercisePicker = false
             },
             onDismiss = { showExercisePicker = false },
@@ -433,7 +433,7 @@ private fun ExerciseSwipeToDismiss(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExercisePickerSheet(
-    onExerciseSelected: (id: String, name: String, muscleGroup: String) -> Unit,
+    onExerciseSelected: (id: String) -> Unit,
     onDismiss: () -> Unit,
     exerciseViewModel: ExerciseViewModel
 ) {
@@ -485,7 +485,7 @@ private fun ExercisePickerSheet(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onExerciseSelected(exercise.id, exercise.name, exercise.muscleGroup) }
+                            .clickable { onExerciseSelected(exercise.id) }
                     ) {
                         Column(Modifier.padding(16.dp)) {
                             Text(exercise.name, style = MaterialTheme.typography.titleMedium)

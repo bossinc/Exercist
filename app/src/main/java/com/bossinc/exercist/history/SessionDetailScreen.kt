@@ -74,7 +74,7 @@ fun SessionDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    val displayDate = session?.startedAt ?: session?.date
+                    val displayDate = session?.startedAt
                     Text(displayDate?.let { dateFormat.format(it) } ?: "Workout")
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } },
@@ -119,19 +119,15 @@ fun SessionDetailScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    if (s.startedAt == null) s.date?.let {
-                        Text(
-                            dateFormat.format(it),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    Text("Duration: ${s.durationMinutes} minutes")
+                    val durationMinutes = if (s.startedAt != null && s.finishedAt != null)
+                        ((s.finishedAt.time - s.startedAt.time) / 60000).toInt() else null
+                    durationMinutes?.let { Text("Duration: $it minutes") }
                 }
                 itemsIndexed(
                     items = editableExercises,
                     key = { _, entry -> entry.exerciseId }
                 ) { exerciseIndex, entry ->
-                    val displayName = allExercises.find { it.id == entry.exerciseId }?.name ?: entry.exerciseName
+                    val displayName = allExercises.find { it.id == entry.exerciseId }?.name ?: ""
                     val isDragging = isEditing && dragState?.exerciseIndex == exerciseIndex
                     var cardHeightPx by remember { mutableIntStateOf(0) }
                     Card(
@@ -193,6 +189,7 @@ fun SessionDetailScreen(
                                 if (isEditing) {
                                     EditableSetRow(
                                         exerciseId = entry.exerciseId,
+                                        setIndex = setIndex,
                                         set = set,
                                         onWeightChange = { newWeight ->
                                             editableExercises = editableExercises.toMutableList()
@@ -226,7 +223,7 @@ fun SessionDetailScreen(
                                     editableExercises =
                                         editableExercises.toMutableList().also { exercises ->
                                             val sets = exercises[exerciseIndex].sets.toMutableList()
-                                            sets.add(ExerciseSet(setNumber = sets.size + 1))
+                                            sets.add(ExerciseSet())
                                             exercises[exerciseIndex] =
                                                 exercises[exerciseIndex].copy(sets = sets)
                                         }
@@ -363,12 +360,13 @@ private fun SessionDragHandle(
 @Composable
 private fun EditableSetRow(
     exerciseId: String,
+    setIndex: Int,
     set: ExerciseSet,
     onWeightChange: (Int) -> Unit,
     onRepsChange: (Int) -> Unit
 ) {
-    var weight by remember(exerciseId, set.setNumber) { mutableStateOf(TextFieldValue(if (set.weight > 0) set.weight.toString() else "")) }
-    var reps by remember(exerciseId, set.setNumber) { mutableStateOf(TextFieldValue(if (set.reps > 0) set.reps.toString() else "")) }
+    var weight by remember(exerciseId, setIndex) { mutableStateOf(TextFieldValue(if (set.weight > 0) set.weight.toString() else "")) }
+    var reps by remember(exerciseId, setIndex) { mutableStateOf(TextFieldValue(if (set.reps > 0) set.reps.toString() else "")) }
     val scope = rememberCoroutineScope()
 
     Row(
@@ -376,7 +374,7 @@ private fun EditableSetRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text("Set ${set.setNumber}", modifier = Modifier.width(48.dp))
+        Text("Set ${setIndex + 1}", modifier = Modifier.width(48.dp))
         OutlinedTextField(
             value = weight,
             onValueChange = {

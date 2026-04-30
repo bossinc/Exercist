@@ -8,7 +8,6 @@ data class Exercise(
     val muscleGroup: String = "",
     val equipment: String = "",
     val description: String = "",
-    val isCustom: Boolean = false,
     val createdBy: String = ""
 )
 

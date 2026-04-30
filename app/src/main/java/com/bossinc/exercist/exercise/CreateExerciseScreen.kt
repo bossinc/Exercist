@@ -56,7 +56,7 @@ fun CreateExerciseScreen(
 
             Button(
                 onClick = {
-                    viewModel.createExercise(Exercise(name = name, muscleGroup = muscleGroup, equipment = equipment, description = description, isCustom = true))
+                    viewModel.createExercise(Exercise(name = name, muscleGroup = muscleGroup, equipment = equipment, description = description))
                     onBack()
                 },
                 enabled = name.isNotBlank(),

@@ -38,7 +38,7 @@ class FirebaseHistoryRepository @Inject constructor(
             if (error != null) { close(error); return@addSnapshotListener }
             val sessions = snapshot?.documents
                 ?.mapNotNull { it.toObject(WorkoutSession::class.java) }
-                ?.sortedByDescending { it.startedAt ?: it.date }
+                ?.sortedByDescending { it.startedAt }
                 ?: emptyList()
             trySend(sessions)
         }

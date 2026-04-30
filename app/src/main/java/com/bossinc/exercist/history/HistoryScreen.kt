@@ -77,11 +77,10 @@ fun HistoryScreen(
             items(sessions) { session ->
                 Card(modifier = Modifier.fillMaxWidth().clickable { onSessionClick(session.id) }) {
                     Column(Modifier.padding(16.dp)) {
-                        val displayDate = session.startedAt ?: session.date
+                        val displayDate = session.startedAt
                         Text(displayDate?.let { dateFormat.format(it) } ?: "Workout", style = MaterialTheme.typography.titleMedium)
                         val muscleGroups = session.exercises
-                            .map { entry -> exercises.find { it.id == entry.exerciseId }?.muscleGroup ?: entry.muscleGroup }
-                            .filter { it.isNotBlank() }
+                            .mapNotNull { entry -> exercises.find { it.id == entry.exerciseId }?.muscleGroup?.takeIf { it.isNotBlank() } }
                             .groupBy { it }
                             .map { (group, entries) -> "$group (${entries.size})" }
                             .joinToString(" · ")
@@ -89,7 +88,9 @@ fun HistoryScreen(
                             if (muscleGroups.isNotBlank()) muscleGroups else "${session.exercises.size} exercises",
                             style = MaterialTheme.typography.bodySmall
                         )
-                        Text("${session.durationMinutes} min", style = MaterialTheme.typography.bodySmall)
+                        val durationMinutes = if (session.startedAt != null && session.finishedAt != null)
+                            ((session.finishedAt.time - session.startedAt.time) / 60000).toInt() else null
+                        durationMinutes?.let { Text("$it min", style = MaterialTheme.typography.bodySmall) }
                     }
                 }
             }
@@ -102,26 +103,18 @@ private fun buildExportJson(sessions: List<WorkoutSession>): String {
     sessions.forEach { session ->
         val obj = JSONObject()
         obj.put("id", session.id)
-        obj.put("name", session.name)
-        obj.put("durationMinutes", session.durationMinutes)
-        obj.put("notes", session.notes)
-        obj.put("date", session.date?.time ?: JSONObject.NULL)
         obj.put("startedAt", session.startedAt?.time ?: JSONObject.NULL)
         obj.put("finishedAt", session.finishedAt?.time ?: JSONObject.NULL)
         val exercisesArray = JSONArray()
         session.exercises.forEach { entry ->
             val entryObj = JSONObject()
             entryObj.put("exerciseId", entry.exerciseId)
-            entryObj.put("exerciseName", entry.exerciseName)
-            entryObj.put("muscleGroup", entry.muscleGroup)
             entryObj.put("notes", entry.notes)
             val setsArray = JSONArray()
             entry.sets.forEach { set ->
                 val setObj = JSONObject()
-                setObj.put("setNumber", set.setNumber)
                 setObj.put("reps", set.reps)
                 setObj.put("weight", set.weight)
-                setObj.put("unit", set.unit)
                 setsArray.put(setObj)
             }
             entryObj.put("sets", setsArray)
