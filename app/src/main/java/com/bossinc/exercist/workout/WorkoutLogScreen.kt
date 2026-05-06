@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -56,6 +57,12 @@ fun WorkoutLogScreen(
     val spacingPx = with(LocalDensity.current) { 16.dp.toPx() }
 
     Scaffold(
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures(onTap = {
+                keyboardController?.hide()
+                focusManager.clearFocus()
+            })
+        },
         topBar = {
             TopAppBar(
                 title = {
