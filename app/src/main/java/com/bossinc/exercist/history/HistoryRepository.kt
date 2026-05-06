@@ -17,6 +17,7 @@ import javax.inject.Singleton
 interface HistoryRepository {
     fun getSessions(): Flow<List<WorkoutSession>>
     suspend fun loadSession(id: String): WorkoutSession?
+    suspend fun upsertSession(session: WorkoutSession): Result<Unit>
     suspend fun updateSession(session: WorkoutSession): Result<Unit>
     suspend fun deleteSession(sessionId: String): Result<Unit>
 }
@@ -47,6 +48,15 @@ class FirebaseHistoryRepository @Inject constructor(
 
     override suspend fun loadSession(id: String): WorkoutSession? =
         workoutsCollection().document(id).get().await().toObject(WorkoutSession::class.java)
+
+    override suspend fun upsertSession(session: WorkoutSession): Result<Unit> = runCatching {
+        if (session.id.isBlank()) {
+            workoutsCollection().add(session).await()
+        } else {
+            workoutsCollection().document(session.id).set(session).await()
+        }
+        Unit
+    }
 
     override suspend fun updateSession(session: WorkoutSession): Result<Unit> = runCatching {
         workoutsCollection().document(session.id).set(session).await()

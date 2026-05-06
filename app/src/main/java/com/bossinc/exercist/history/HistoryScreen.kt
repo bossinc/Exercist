@@ -1,6 +1,8 @@
 package com.bossinc.exercist.history
 
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +16,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bossinc.exercist.data.model.ExerciseEntry
+import com.bossinc.exercist.data.model.ExerciseSet
 import com.bossinc.exercist.data.model.WorkoutSession
 import com.bossinc.exercist.exercise.ExerciseViewModel
 import org.json.JSONArray
@@ -34,6 +38,15 @@ fun HistoryScreen(
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy h:mm a", Locale.getDefault()) }
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
+
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val json = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+            if (!json.isNullOrBlank()) {
+                viewModel.importSessions(parseImportJson(json))
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -65,6 +78,13 @@ fun HistoryScreen(
                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 }
                                 context.startActivity(Intent.createChooser(intent, "Export workout data"))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Import data") },
+                            onClick = {
+                                menuExpanded = false
+                                importLauncher.launch("application/json")
                             }
                         )
                     }
@@ -124,4 +144,33 @@ private fun buildExportJson(sessions: List<WorkoutSession>): String {
         array.put(obj)
     }
     return array.toString(2)
+}
+
+private fun parseImportJson(json: String): List<WorkoutSession> {
+    val array = JSONArray(json)
+    return List(array.length()) { i ->
+        val obj = array.getJSONObject(i)
+        val startedAt = obj.opt("startedAt").let { if (it is Number) Date(it.toLong()) else null }
+        val finishedAt = obj.opt("finishedAt").let { if (it is Number) Date(it.toLong()) else null }
+        val exercisesArray = obj.optJSONArray("exercises") ?: JSONArray()
+        val entries = List(exercisesArray.length()) { j ->
+            val entryObj = exercisesArray.getJSONObject(j)
+            val setsArray = entryObj.optJSONArray("sets") ?: JSONArray()
+            val sets = List(setsArray.length()) { k ->
+                val setObj = setsArray.getJSONObject(k)
+                ExerciseSet(reps = setObj.optInt("reps"), weight = setObj.optInt("weight"))
+            }
+            ExerciseEntry(
+                exerciseId = entryObj.optString("exerciseId"),
+                sets = sets,
+                notes = entryObj.optString("notes")
+            )
+        }
+        WorkoutSession(
+            id = obj.optString("id"),
+            exercises = entries,
+            startedAt = startedAt,
+            finishedAt = finishedAt
+        )
+    }
 }

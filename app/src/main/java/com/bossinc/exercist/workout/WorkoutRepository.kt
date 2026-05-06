@@ -14,6 +14,7 @@ import javax.inject.Singleton
 
 interface WorkoutRepository {
     suspend fun saveWorkoutSession(session: WorkoutSession): Result<Unit>
+    suspend fun upsertWorkoutSession(session: WorkoutSession): Result<String>
     suspend fun getRecentSessions(limit: Int = 20): List<WorkoutSession>
     suspend fun deleteWorkoutSession(sessionId: String): Result<Unit>
 }
@@ -28,8 +29,17 @@ class FirebaseWorkoutRepository @Inject constructor(
     private fun sessionsCollection() = firestore.collection("users").document(userId).collection("workouts")
 
     override suspend fun saveWorkoutSession(session: WorkoutSession): Result<Unit> = runCatching {
-        sessionsCollection().add(session.copy(userId = userId)).await()
+        sessionsCollection().add(session).await()
         Unit
+    }
+
+    override suspend fun upsertWorkoutSession(session: WorkoutSession): Result<String> = runCatching {
+        if (session.id.isBlank()) {
+            sessionsCollection().add(session).await().id
+        } else {
+            sessionsCollection().document(session.id).set(session).await()
+            session.id
+        }
     }
 
     override suspend fun getRecentSessions(limit: Int): List<WorkoutSession> =
@@ -38,6 +48,7 @@ class FirebaseWorkoutRepository @Inject constructor(
             .limit(limit.toLong())
             .get().await()
             .documents.mapNotNull { it.toObject(WorkoutSession::class.java) }
+            .filter { it.finishedAt != null }
 
     override suspend fun deleteWorkoutSession(sessionId: String): Result<Unit> = runCatching {
         sessionsCollection().document(sessionId).delete().await()

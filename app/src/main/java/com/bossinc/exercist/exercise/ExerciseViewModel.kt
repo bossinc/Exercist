@@ -1,5 +1,6 @@
 package com.bossinc.exercist.exercise
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bossinc.exercist.data.model.Exercise
@@ -15,6 +16,7 @@ class ExerciseViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     private val _selectedMuscleGroup = MutableStateFlow<String?>(null)
     private val _allExercises = MutableStateFlow<List<Exercise>>(emptyList())
+    val allExercises: StateFlow<List<Exercise>> = _allExercises
 
     val exercises: StateFlow<List<Exercise>> = combine(
         _allExercises, _searchQuery, _selectedMuscleGroup
@@ -40,6 +42,10 @@ class ExerciseViewModel @Inject constructor(
     private val _exerciseDeleted = MutableStateFlow(false)
     val exerciseDeleted: StateFlow<Boolean> = _exerciseDeleted
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
+    fun clearError() { _errorMessage.value = null }
+
     fun createExercise(exercise: Exercise) {
         viewModelScope.launch { repository.createExercise(exercise) }
     }
@@ -52,6 +58,16 @@ class ExerciseViewModel @Inject constructor(
         viewModelScope.launch {
             repository.deleteExercise(exerciseId)
                 .onSuccess { _exerciseDeleted.value = true }
+                .onFailure {
+                    Log.e("ExerciseViewModel", "deleteExercise failed", it)
+                    _errorMessage.value = "Delete failed: ${it.message ?: it.javaClass.simpleName}"
+                }
+        }
+    }
+
+    fun importExercises(exercises: List<Exercise>) {
+        viewModelScope.launch {
+            exercises.forEach { repository.upsertExercise(it) }
         }
     }
 }

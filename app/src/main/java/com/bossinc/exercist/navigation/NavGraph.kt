@@ -14,9 +14,6 @@ import com.bossinc.exercist.exercise.ExerciseDetailScreen
 import com.bossinc.exercist.exercise.ExercisesScreen
 import com.bossinc.exercist.history.HistoryScreen
 import com.bossinc.exercist.history.SessionDetailScreen
-import com.bossinc.exercist.template.CreateTemplateScreen
-import com.bossinc.exercist.template.TemplateDetailScreen
-import com.bossinc.exercist.template.TemplatesScreen
 import com.bossinc.exercist.workout.WorkoutLogScreen
 
 @Composable
@@ -61,25 +58,6 @@ fun NavGraph(navController: NavHostController, isAuthenticated: Boolean, modifie
         }
         composable(Routes.Workout.route) {
             WorkoutLogScreen(navController = navController)
-        }
-        composable(Routes.Templates.route) {
-            TemplatesScreen(
-                onTemplateClick = { id -> navController.navigate(Routes.TemplateDetail.createRoute(id)) },
-                onCreateTemplate = { navController.navigate(Routes.CreateTemplate.route) }
-            )
-        }
-        composable(
-            Routes.TemplateDetail.route,
-            arguments = listOf(navArgument("templateId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            TemplateDetailScreen(
-                templateId = backStackEntry.arguments?.getString("templateId") ?: "",
-                onBack = { navController.popBackStack() },
-                onStartWorkout = { navController.navigate(Routes.Workout.route) }
-            )
-        }
-        composable(Routes.CreateTemplate.route) {
-            CreateTemplateScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.History.route) {
             HistoryScreen(

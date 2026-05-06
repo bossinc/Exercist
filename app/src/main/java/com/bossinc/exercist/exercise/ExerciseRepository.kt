@@ -13,6 +13,7 @@ import javax.inject.Singleton
 interface ExerciseRepository {
     fun getExercises(): Flow<List<Exercise>>
     suspend fun createExercise(exercise: Exercise): Result<Unit>
+    suspend fun upsertExercise(exercise: Exercise): Result<Unit>
     suspend fun updateExercise(exercise: Exercise): Result<Unit>
     suspend fun deleteExercise(exerciseId: String): Result<Unit>
 }
@@ -35,6 +36,16 @@ class FirebaseExerciseRepository @Inject constructor(
 
     override suspend fun createExercise(exercise: Exercise): Result<Unit> = runCatching {
         collection.add(exercise.copy(createdBy = auth.currentUser?.uid ?: "")).await()
+        Unit
+    }
+
+    override suspend fun upsertExercise(exercise: Exercise): Result<Unit> = runCatching {
+        val stamped = exercise.copy(createdBy = auth.currentUser?.uid ?: "")
+        if (exercise.id.isBlank()) {
+            collection.add(stamped).await()
+        } else {
+            collection.document(exercise.id).set(stamped).await()
+        }
         Unit
     }
 

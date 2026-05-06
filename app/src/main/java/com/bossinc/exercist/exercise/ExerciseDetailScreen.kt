@@ -1,5 +1,6 @@
 package com.bossinc.exercist.exercise
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -9,6 +10,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bossinc.exercist.data.model.MuscleGroups
@@ -22,6 +24,9 @@ fun ExerciseDetailScreen(
 ) {
     val exercises by viewModel.exercises.collectAsState()
     val exerciseDeleted by viewModel.exerciseDeleted.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     val exercise = exercises.firstOrNull { it.id == exerciseId }
 
     var isEditing by remember { mutableStateOf(false) }
@@ -36,7 +41,26 @@ fun ExerciseDetailScreen(
         if (exerciseDeleted) onBack()
     }
 
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { msg ->
+            val result = snackbarHostState.showSnackbar(
+                message = msg,
+                actionLabel = "Share",
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, msg)
+                }
+                context.startActivity(Intent.createChooser(intent, "Share error"))
+            }
+            viewModel.clearError()
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(if (isEditing) "Edit Exercise" else (exercise?.name ?: "Exercise")) },

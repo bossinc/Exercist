@@ -41,4 +41,10 @@ class HistoryViewModel @Inject constructor(
             _sessionDeleted.value = true
         }
     }
+
+    fun importSessions(sessions: List<WorkoutSession>) {
+        viewModelScope.launch {
+            sessions.forEach { repository.upsertSession(it) }
+        }
+    }
 }
