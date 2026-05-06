@@ -54,6 +54,7 @@ fun WorkoutLogScreen(
     val focusManager = LocalFocusManager.current
     var showExercisePicker by remember { mutableStateOf(false) }
     var dragState by remember { mutableStateOf<DragInfo?>(null) }
+    var expandedExerciseId by remember { mutableStateOf<String?>(null) }
     val spacingPx = with(LocalDensity.current) { 16.dp.toPx() }
 
     Scaffold(
@@ -179,16 +180,35 @@ fun WorkoutLogScreen(
                     }
                 }
             } else {
-                // Active phase: show set inputs
+                // Active phase: collapsed by default, only one expanded at a time
                 itemsIndexed(
                     items = uiState.exercises,
                     key = { _, entry -> entry.exerciseId }
                 ) { exerciseIndex, entry ->
                     val exercise = exercises.find { it.id == entry.exerciseId }
                     val displayName = exercise?.name ?: ""
-                    var showInfoDialog by remember { mutableStateOf(false) }
+                    val isExpanded = expandedExerciseId == entry.exerciseId
                     val isDragging = dragState?.exerciseIndex == exerciseIndex
                     var cardHeightPx by remember { mutableIntStateOf(0) }
+                    val dragHandleDelta: (Float) -> Unit = { delta ->
+                        dragState?.let { current ->
+                            val newDelta = current.deltaY + delta
+                            val stepSize = (cardHeightPx + spacingPx).coerceAtLeast(80f)
+                            val curIdx = current.exerciseIndex
+                            val size = uiState.exercises.size
+                            when {
+                                newDelta > stepSize / 2 && curIdx < size - 1 -> {
+                                    viewModel.moveExercise(curIdx, curIdx + 1)
+                                    dragState = current.copy(exerciseIndex = curIdx + 1, deltaY = newDelta - stepSize)
+                                }
+                                newDelta < -(stepSize / 2) && curIdx > 0 -> {
+                                    viewModel.moveExercise(curIdx, curIdx - 1)
+                                    dragState = current.copy(exerciseIndex = curIdx - 1, deltaY = newDelta + stepSize)
+                                }
+                                else -> dragState = current.copy(deltaY = newDelta)
+                            }
+                        }
+                    }
                     ExerciseSwipeToDismiss(
                         modifier = if (isDragging) {
                             Modifier
@@ -211,118 +231,116 @@ fun WorkoutLogScreen(
                             .fillMaxWidth()
                             .onSizeChanged { cardHeightPx = it.height }
                     ) {
-                        Column(Modifier.padding(16.dp)) {
+                        if (!isExpanded) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier
+                                    .clickable {
+                                        keyboardController?.hide()
+                                        focusManager.clearFocus()
+                                        expandedExerciseId = entry.exerciseId
+                                    }
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.Top
                             ) {
-                                Text(
-                                    displayName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clickable(
-                                            enabled = exercise != null && (!exercise.equipment.isNullOrBlank() || !exercise.description.isNullOrBlank())
-                                        ) { showInfoDialog = true }
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(displayName, style = MaterialTheme.typography.titleMedium)
+                                    val subtitle = listOfNotNull(
+                                        exercise?.muscleGroup?.takeIf { it.isNotBlank() },
+                                        exercise?.equipment?.takeIf { it.isNotBlank() }
+                                    ).joinToString(" · ")
+                                    if (subtitle.isNotBlank()) {
+                                        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    if (!exercise?.description.isNullOrBlank()) {
+                                        Text(exercise!!.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
                                 ExerciseDragHandle(
                                     onDragStart = {
                                         dragState = DragInfo(exerciseIndex = exerciseIndex, deltaY = 0f)
                                     },
-                                    onDragDelta = { delta ->
-                                        dragState?.let { current ->
-                                            val newDelta = current.deltaY + delta
-                                            val stepSize = (cardHeightPx + spacingPx).coerceAtLeast(80f)
-                                            val curIdx = current.exerciseIndex
-                                            val size = uiState.exercises.size
-                                            when {
-                                                newDelta > stepSize / 2 && curIdx < size - 1 -> {
-                                                    viewModel.moveExercise(curIdx, curIdx + 1)
-                                                    dragState = current.copy(exerciseIndex = curIdx + 1, deltaY = newDelta - stepSize)
-                                                }
-                                                newDelta < -(stepSize / 2) && curIdx > 0 -> {
-                                                    viewModel.moveExercise(curIdx, curIdx - 1)
-                                                    dragState = current.copy(exerciseIndex = curIdx - 1, deltaY = newDelta + stepSize)
-                                                }
-                                                else -> dragState = current.copy(deltaY = newDelta)
-                                            }
-                                        }
-                                    },
+                                    onDragDelta = dragHandleDelta,
                                     onDragEnd = { dragState = null }
                                 )
                             }
-                            if (showInfoDialog && exercise != null) {
-                                AlertDialog(
-                                    onDismissRequest = { showInfoDialog = false },
-                                    title = { Text(exercise.name) },
-                                    text = {
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            if (exercise.equipment.isNotBlank()) {
-                                                Text("Equipment: ${exercise.equipment}")
-                                            }
-                                            if (exercise.description.isNotBlank()) {
-                                                Spacer(Modifier.height(4.dp))
-                                                Text(exercise.description)
-                                            }
-                                        }
-                                    },
-                                    confirmButton = {
-                                        TextButton(onClick = { showInfoDialog = false }) { Text("Close") }
-                                    }
-                                )
-                            }
-                            val prevSets = uiState.previousSets[entry.exerciseId]
-                            val prevNotes = uiState.previousNotes[entry.exerciseId]
-                            if (!prevSets.isNullOrEmpty()) {
-                                Spacer(Modifier.height(4.dp))
-                                Text("Last time", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                prevSets.forEach { prev ->
+                        } else {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
-                                        "${prev.weight}lbs × ${prev.reps}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        displayName,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable {
+                                                keyboardController?.hide()
+                                                focusManager.clearFocus()
+                                                expandedExerciseId = null
+                                            }
+                                    )
+                                    ExerciseDragHandle(
+                                        onDragStart = {
+                                            dragState = DragInfo(exerciseIndex = exerciseIndex, deltaY = 0f)
+                                        },
+                                        onDragDelta = dragHandleDelta,
+                                        onDragEnd = { dragState = null }
                                     )
                                 }
-                                if (!prevNotes.isNullOrBlank()) {
-                                    Text(
-                                        "Note: $prevNotes",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                            } else {
-                                Spacer(Modifier.height(8.dp))
-                            }
-                            entry.sets.forEachIndexed { setIndex, set ->
-                                ActiveSetRow(
-                                    exerciseId = entry.exerciseId,
-                                    setIndex = setIndex,
-                                    initialReps = set.reps,
-                                    initialWeight = set.weight,
-                                    onValuesChange = { reps, weight ->
-                                        viewModel.updateSetValues(exerciseIndex, setIndex, reps, weight)
+                                val prevSets = uiState.previousSets[entry.exerciseId]
+                                val prevNotes = uiState.previousNotes[entry.exerciseId]
+                                if (!prevSets.isNullOrEmpty()) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("Last time", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    prevSets.forEach { prev ->
+                                        Text(
+                                            "${prev.weight}lbs × ${prev.reps}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
-                                )
-                            }
-                            OutlinedTextField(
-                                value = entry.notes,
-                                onValueChange = { viewModel.updateExerciseNotes(exerciseIndex, it) },
-                                placeholder = { Text("Notes") },
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                singleLine = false,
-                                minLines = 1
-                            )
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                if (entry.sets.size > 1) {
-                                    TextButton(onClick = { viewModel.removeLastSet(exerciseIndex) }) {
-                                        Text("- Remove Set", color = MaterialTheme.colorScheme.error)
+                                    if (!prevNotes.isNullOrBlank()) {
+                                        Text(
+                                            "Note: $prevNotes",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                                 } else {
-                                    Spacer(Modifier.weight(1f))
+                                    Spacer(Modifier.height(8.dp))
                                 }
-                                TextButton(onClick = { keyboardController?.hide(); focusManager.clearFocus(); viewModel.addSet(exerciseIndex) }) {
-                                    Text("+ Add Set")
+                                entry.sets.forEachIndexed { setIndex, set ->
+                                    ActiveSetRow(
+                                        exerciseId = entry.exerciseId,
+                                        setIndex = setIndex,
+                                        initialReps = set.reps,
+                                        initialWeight = set.weight,
+                                        onValuesChange = { reps, weight ->
+                                            viewModel.updateSetValues(exerciseIndex, setIndex, reps, weight)
+                                        }
+                                    )
+                                }
+                                OutlinedTextField(
+                                    value = entry.notes,
+                                    onValueChange = { viewModel.updateExerciseNotes(exerciseIndex, it) },
+                                    placeholder = { Text("Notes") },
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    singleLine = false,
+                                    minLines = 1
+                                )
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    if (entry.sets.size > 1) {
+                                        TextButton(onClick = { viewModel.removeLastSet(exerciseIndex) }) {
+                                            Text("- Remove Set", color = MaterialTheme.colorScheme.error)
+                                        }
+                                    } else {
+                                        Spacer(Modifier.weight(1f))
+                                    }
+                                    TextButton(onClick = { keyboardController?.hide(); focusManager.clearFocus(); viewModel.addSet(exerciseIndex) }) {
+                                        Text("+ Add Set")
+                                    }
                                 }
                             }
                         }
